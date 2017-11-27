@@ -3,96 +3,95 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fmallaba <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: fmallaba <fmallaba@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/21 18:38:01 by fmallaba          #+#    #+#             */
-/*   Updated: 2017/11/21 19:04:22 by fmallaba         ###   ########.fr       */
+/*   Updated: 2017/11/27 21:46:31 by fmallaba         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdlib.h>
 #include "get_next_line.h"
 #include "libft.h"
 
-void	del_content(void *content, size_t size)
-{
-	ft_memdel(&content);
-	size = 0;
-}
-
-int		ft_strclen(char *str, char c)
-{
-	int	i;
-
-	i = 0;
-	while (str[i] && str[i] != c)
-		i++;
-	return (i);
-}
-
-int		cut_buff(char (*buf)[BUFF_SIZE + 1], t_list **list)
+void	cut_buff(char (*buf)[BUFF_SIZE + 1], char **line, char **tmp)
 {
 	int		i;
-	char	*tmp;
+	char	*temp;
 
 	i = 0;
 	while ((*buf)[i] != '\n')
 		i++;
-	tmp = ft_strsub(*buf, 0, i);
+	if ((i == 0 && !(*tmp)) || i > 0)
+		*line = ft_strsub((*buf), 0, i);
+	if (*tmp)
+	{
+		temp = ft_strsub(*buf, 0, i);
+		*line = ft_strjoin((*tmp), temp);
+		ft_strdel(&(*tmp));
+		ft_strdel(&temp);
+	}
 	ft_memmove(&(*buf)[0], &(*buf)[i + 1], BUFF_SIZE - i);
-	// ft_putendl(*buf);
-	ft_list_pushback(&(*list), ft_lstnew(tmp, i));
-	free(tmp);
-	return (BUFF_SIZE - i);
 }
 
-char	*create_str(t_list *list, int count)
+void	get_line_from_last(char **line, char (*buf)[BUFF_SIZE + 1], char **tmp)
 {
-	char	*str;
+	int	len;
 
-	str = ft_strnew(count);
-	ft_putendl(ft_itoa(count));
-	while (list)
+	len = 0;
+	while ((*buf)[len] && (*buf)[len] != '\n')
+		len++;
+	if (!len)
+		*tmp = NULL;
+	*line = ft_strsub(*buf, 0, len);
+	if (ft_strchr(*buf, 10))
 	{
-		str = ft_strncat(str, list->content, list->content_size);
-		list = list->next;
+		ft_bzero(&(*buf)[0], len);
+		ft_memmove(&(*buf)[0], &(*buf)[len + 1], BUFF_SIZE - len);
 	}
-	return (str);
+	else
+	{
+		*tmp = *line;
+		ft_bzero(*buf, BUFF_SIZE + 1);
+	}
+}
+
+void	get_next_line_help(char **line, char (*buf)[BUFF_SIZE + 1], char **tmp)
+{
+	if (!(*tmp))
+	{
+		*tmp = ft_strdup(*buf);
+		*line = *tmp;
+	}
+	else
+	{
+		*line = ft_strjoin(*tmp, *buf);
+		ft_strdel(&(*tmp));
+		*tmp = *line;
+	}
+	ft_bzero(*buf, BUFF_SIZE + 1);
 }
 
 int		get_next_line(const int fd, char **line)
 {
 	int			ret;
-	int			count;
-	static	int	len;
+	char		*tmp;
 	static char	buf[BUFF_SIZE + 1];
-	t_list		*list;
 
-	list = NULL;
-	count = 0;
-	if (len)
-	{
-		count += ft_strclen(buf, '\n');
-		ft_list_pushback(&list, ft_lstnew(ft_strsub(buf, 0, len), count));
-	}
-	ft_bzero(buf, BUFF_SIZE + 1);
-	len = 0;
-	while (!len && (ret = read(fd, &buf, BUFF_SIZE)))
-	{
-		count += ft_strclen(buf, '\n');
-		if (ft_strrchr(buf, 10))
-			len = cut_buff(&buf, &list);
-		else
-		{
-			ft_list_pushback(&list, ft_lstnew(buf, ft_strlen(buf)));
-			ft_bzero(buf, BUFF_SIZE);
-		}
-	}
-	if (!list || ret < 0)
+	if (fd < 0 || !line)
 		return (-1);
-	*line = create_str(list, count);
-	ft_lstdel(&list, &del_content);
-	if (ret == 0)
+	tmp = NULL;
+	if (ft_strlen(buf))
+		get_line_from_last(&(*line), &buf, &tmp);
+	while ((ret = read(fd, &buf, BUFF_SIZE)) > 0 && !ft_strchr(buf, 10))
+	{
+		ft_bzero(&buf[ret], BUFF_SIZE);
+		get_next_line_help(&(*line), &buf, &tmp);
+	}
+	if (ft_strchr(buf, 10))
+		cut_buff(&buf, &(*line), &tmp);
+	if (ret < 0)
+		return (-1);
+	if (ret == 0 && tmp == NULL)
 		return (0);
-	return (0);
+	return (1);
 }
