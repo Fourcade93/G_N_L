@@ -13,6 +13,7 @@ ft_lstdel.c ft_lstadd.c ft_lstiter.c ft_lstmap.c ft_list_pushback.c \
 ft_new_tree_elem.c ft_tree_add_elem.c ft_tree_pre.c ft_tree_in.c \
 ft_tree_post.c
 OBJ = $(SRC:.c=.o)
+INC_DIR = includes/
 NAME = libft.a
 CC = gcc
 FLAGS = -Wall -Werror -Wextra
@@ -25,7 +26,7 @@ $(NAME): $(OBJ)
 	@echo "Create libft.a"
 
 %.o: %.c
-	@$(CC) $(FLAGS) -c -o $@ $<
+	@$(CC) $(FLAGS) -c -o $@ $< -I$(INC_DIR)
 clean:
 	@/bin/rm -f $(OBJ)
 	@echo "Delete object-files"
