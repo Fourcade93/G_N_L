@@ -6,92 +6,126 @@
 /*   By: fmallaba <fmallaba@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/21 18:38:01 by fmallaba          #+#    #+#             */
-/*   Updated: 2017/11/27 21:46:31 by fmallaba         ###   ########.fr       */
+/*   Updated: 2017/11/30 22:19:48 by fmallaba         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "get_next_line.h"
 #include "libft.h"
 
-void	cut_buff(char (*buf)[BUFF_SIZE + 1], char **line, char **tmp)
+int		delete_elem(t_list **list, int fd)
 {
-	int		i;
-	char	*temp;
+	t_list	*tmp;
+	t_list	*buf;
+	size_t	nfd;
 
-	i = 0;
-	while ((*buf)[i] != '\n')
-		i++;
-	if ((i == 0 && !(*tmp)) || i > 0)
-		*line = ft_strsub((*buf), 0, i);
+	tmp = *list;
+	nfd = fd;
+	if (tmp->content_size == nfd)
+	{
+		buf = tmp->next;
+		free(tmp->content);
+		free(tmp);
+		*list = buf;
+		return (0);
+	}
+	while (tmp->next && tmp->next->content_size != nfd)
+		tmp = tmp->next;
+	buf = tmp->next->next;
+	free(tmp->next->content);
+	free(tmp->next);
+	tmp->next = buf;
+	return (0);
+}
+
+void	get_line(t_list *temp, char **line)
+{
+	char	*buf;
+	int		i;
+	int		len;
+
+	buf = (char *)(temp->content);
+	len = ft_strlen(buf);
+	if (ft_strchr(temp->content, 10))
+	{
+		i = 0;
+		while (buf[i] != '\n')
+			i++;
+		*line = ft_strsub(buf, 0, i);
+		if (len - i == 1)
+			ft_bzero(buf, len);
+		else
+		{
+			ft_memmove(buf, &buf[i + 1], len - i);
+			ft_bzero(&buf[len - i], i);
+		}
+	}
+	else
+	{
+		*line = ft_strdup(buf);
+		ft_bzero(buf, len);
+	}
+}
+
+t_list	*get_list(t_list **list, char **tmp, int fd)
+{
+	t_list	*new;
+	t_list	*temp;
+	size_t	nfd;
+
 	if (*tmp)
 	{
-		temp = ft_strsub(*buf, 0, i);
-		*line = ft_strjoin((*tmp), temp);
+		new = ft_lstnew(*tmp, ft_strlen(*tmp) + 1);
+		new->content_size = fd;
+		ft_lstadd(&(*list), new);
+		free(*tmp);
+		*tmp = NULL;
+		return (*list);
+	}
+	temp = *list;
+	nfd = fd;
+	while (temp && temp->content_size != nfd)
+		temp = temp->next;
+	return (temp);
+}
+
+void	get_next_line_help(char buf[BUFF_SIZE + 1], char **tmp, int ret)
+{
+	char	*temp;
+	char	*temp2;
+
+	temp = ft_strsub(buf, 0, ret);
+	if (*tmp)
+	{
+		temp2 = ft_strjoin(*tmp, temp);
 		ft_strdel(&(*tmp));
 		ft_strdel(&temp);
-	}
-	ft_memmove(&(*buf)[0], &(*buf)[i + 1], BUFF_SIZE - i);
-}
-
-void	get_line_from_last(char **line, char (*buf)[BUFF_SIZE + 1], char **tmp)
-{
-	int	len;
-
-	len = 0;
-	while ((*buf)[len] && (*buf)[len] != '\n')
-		len++;
-	if (!len)
-		*tmp = NULL;
-	*line = ft_strsub(*buf, 0, len);
-	if (ft_strchr(*buf, 10))
-	{
-		ft_bzero(&(*buf)[0], len);
-		ft_memmove(&(*buf)[0], &(*buf)[len + 1], BUFF_SIZE - len);
+		*tmp = temp2;
 	}
 	else
-	{
-		*tmp = *line;
-		ft_bzero(*buf, BUFF_SIZE + 1);
-	}
-}
-
-void	get_next_line_help(char **line, char (*buf)[BUFF_SIZE + 1], char **tmp)
-{
-	if (!(*tmp))
-	{
-		*tmp = ft_strdup(*buf);
-		*line = *tmp;
-	}
-	else
-	{
-		*line = ft_strjoin(*tmp, *buf);
-		ft_strdel(&(*tmp));
-		*tmp = *line;
-	}
-	ft_bzero(*buf, BUFF_SIZE + 1);
+		*tmp = temp;
 }
 
 int		get_next_line(const int fd, char **line)
 {
-	int			ret;
-	char		*tmp;
-	static char	buf[BUFF_SIZE + 1];
+	int				ret;
+	char			buf[BUFF_SIZE + 1];
+	char			*tmp;
+	t_list			*temp;
+	static t_list	*list;
 
 	if (fd < 0 || !line)
 		return (-1);
 	tmp = NULL;
-	if (ft_strlen(buf))
-		get_line_from_last(&(*line), &buf, &tmp);
-	while ((ret = read(fd, &buf, BUFF_SIZE)) > 0 && !ft_strchr(buf, 10))
-	{
-		ft_bzero(&buf[ret], BUFF_SIZE);
-		get_next_line_help(&(*line), &buf, &tmp);
-	}
-	if (ft_strchr(buf, 10))
-		cut_buff(&buf, &(*line), &tmp);
+	while ((ret = read(fd, &buf, BUFF_SIZE)) > 0)
+		get_next_line_help(buf, &tmp, ret);
 	if (ret < 0)
 		return (-1);
-	if (ret == 0 && tmp == NULL)
+	temp = get_list(&list, &tmp, fd);
+	if (!temp)
 		return (0);
+	if (ret == 0 && !ft_strlen(temp->content))
+		return (delete_elem(&list, fd));
+	get_line(temp, &(*line));
 	return (1);
 }

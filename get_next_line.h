@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.h                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: fmallaba <marvin@42.fr>                    +#+  +:+       +#+        */
+/*   By: fmallaba <fmallaba@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/21 18:35:50 by fmallaba          #+#    #+#             */
-/*   Updated: 2017/11/21 18:37:48 by fmallaba         ###   ########.fr       */
+/*   Updated: 2017/11/30 22:20:38 by fmallaba         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,8 @@
 
 # include <unistd.h>
 
-# define BUFF_SIZE 1
+# define BUFF_SIZE 1000
 
-int	get_next_line(const int fd, char **line);
+int					get_next_line(const int fd, char **line);
 
 #endif
