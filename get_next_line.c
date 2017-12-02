@@ -6,7 +6,7 @@
 /*   By: fmallaba <fmallaba@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/11/21 18:38:01 by fmallaba          #+#    #+#             */
-/*   Updated: 2017/11/30 22:30:15 by fmallaba         ###   ########.fr       */
+/*   Updated: 2017/12/02 21:12:48 by fmallaba         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -67,25 +67,30 @@ void	get_line(t_list *temp, char **line)
 	}
 }
 
-t_list	*get_list(t_list **list, char **tmp, int fd)
+t_list	*get_list(t_list **list, int fd)
 {
 	t_list	*new;
 	t_list	*temp;
 	size_t	nfd;
 
-	if (*tmp)
+	if (!(*list))
 	{
-		new = ft_lstnew(*tmp, ft_strlen(*tmp) + 1);
+		new = ft_lstnew(NULL, 0);
 		new->content_size = fd;
 		ft_lstadd(&(*list), new);
-		free(*tmp);
-		*tmp = NULL;
 		return (*list);
 	}
 	temp = *list;
 	nfd = fd;
 	while (temp && temp->content_size != nfd)
 		temp = temp->next;
+	if (!temp)
+	{
+		new = ft_lstnew(NULL, 0);
+		new->content_size = fd;
+		ft_lstadd(&(*list), new);
+		return (*list);
+	}
 	return (temp);
 }
 
@@ -116,13 +121,18 @@ int		get_next_line(const int fd, char **line)
 
 	if (fd < 0 || !line)
 		return (-1);
-	tmp = NULL;
+	temp = get_list(&list, fd);
+	tmp = temp->content;
 	while ((ret = read(fd, &buf, BUFF_SIZE)) > 0)
+	{
 		get_next_line_help(buf, &tmp, ret);
+		temp->content = tmp;
+		if (ft_strchr(tmp, 10))
+			break ;
+	}
 	if (ret < 0)
 		return (-1);
-	temp = get_list(&list, &tmp, fd);
-	if (!temp)
+	if (!temp || !temp->content)
 		return (0);
 	if (ret == 0 && !ft_strlen(temp->content))
 		return (delete_elem(&list, fd));

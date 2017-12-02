@@ -6,12 +6,11 @@
 /*   By: fmallaba <fmallaba@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2017/10/25 03:04:24 by fmallaba          #+#    #+#             */
-/*   Updated: 2017/11/30 22:05:30 by fmallaba         ###   ########.fr       */
+/*   Updated: 2017/11/30 22:52:45 by fmallaba         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <string.h>
-#include "libft.h"
 
 void	*ft_memcpy(void *dest, const void *src, size_t len)
 {
